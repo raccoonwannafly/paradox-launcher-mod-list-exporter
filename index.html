@@ -83,10 +83,17 @@
                     <i class="fa-solid fa-gamepad text-2xl text-blue-600 dark:text-blue-400 mr-3"></i>
                     <span class="font-bold text-xl tracking-tight">Paradox Mod<span class="text-blue-600 dark:text-blue-400">Exporter</span></span>
                 </div>
-                <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                    <i class="fas fa-moon dark:hidden text-gray-600"></i>
-                    <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
-                </button>
+                <div class="flex items-center space-x-3">
+                    <!-- Buy Me a Coffee Button -->
+                    <a href="https://buymeacoffee.com/raccoonwannafly" target="_blank" class="hidden sm:flex items-center px-3 py-1.5 bg-[#FFDD00] hover:bg-[#FFEA00] text-black text-sm font-semibold rounded-lg transition-colors shadow-sm">
+                        <i class="fas fa-coffee mr-2"></i> Buy me a coffee
+                    </a>
+                    
+                    <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-moon dark:hidden text-gray-600"></i>
+                        <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -96,7 +103,7 @@
         <div class="text-center mb-8">
             <h1 class="text-3xl font-extrabold mb-2">Export Mod List</h1>
             <p class="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto">
-                Due to browser security, we cannot auto-detect folders. Please select your <code>dlc_load.json</code> and then your <code>mod</code> folder manually.
+                Due to browser security, we cannot auto-detect folders. Please select your <code>dlc_load.json</code> and then select all files in your <code>mod</code> folder manually.
             </p>
         </div>
 
@@ -133,7 +140,6 @@
                     </p>
                     
                     <label class="file-upload-zone rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer h-32 relative">
-                        <!-- Changed: Removed webkitdirectory, added accept=".mod" -->
                         <input type="file" id="folderInput" accept=".mod" multiple class="hidden" />
                         <i class="fas fa-copy text-3xl text-gray-400 mb-2"></i>
                         <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Click to select .mod files</span>
@@ -170,6 +176,18 @@
         </div>
 
     </main>
+
+    <footer class="mt-auto border-t border-gray-200 dark:border-gray-700 py-6">
+        <div class="container mx-auto px-4 text-center">
+             <!-- Mobile Buy Me Coffee (Visible only on small screens) -->
+             <div class="sm:hidden mb-4">
+                <a href="https://www.buymeacoffee.com/YOUR_USERNAME_HERE" target="_blank" class="inline-flex items-center px-4 py-2 bg-[#FFDD00] text-black text-sm font-bold rounded-lg shadow-sm">
+                    <i class="fas fa-coffee mr-2"></i> Buy me a coffee
+                </a>
+             </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Paradox Mod Exporter &copy; 2023</p>
+        </div>
+    </footer>
 
     <script>
         // State
@@ -213,7 +231,7 @@
                 // Unlock Step 2
                 el.step2.classList.remove('opacity-50', 'pointer-events-none');
                 
-                logToPreview(`JSON Loaded. Waiting for mod folder...`, true);
+                logToPreview(`JSON Loaded. Waiting for mod files...`, true);
 
             } catch (err) {
                 alert("Error reading JSON file. Make sure it is a valid dlc_load.json");
@@ -221,7 +239,7 @@
             }
         });
 
-        // --- Step 2: Handle Folder Select & Processing ---
+        // --- Step 2: Handle Multiple Files Select & Processing ---
         el.folderInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
@@ -265,7 +283,7 @@
                         addModToList(`${filename} (Read Error)`, false);
                     }
                 } else {
-                    addModToList(`${filename} (Missing from folder)`, false);
+                    addModToList(`${filename} (Missing from selection)`, false);
                 }
             }
 
