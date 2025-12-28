@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paradox Mod List Exporter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .dark .glass-panel {
+            background: rgba(31, 41, 55, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom file input styling */
+        .file-upload-zone {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.2s;
+        }
+        .file-upload-zone:hover, .file-upload-zone.drag-active {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        .dark .file-upload-zone {
+            border-color: #4b5563;
+        }
+        .dark .file-upload-zone:hover, .dark .file-upload-zone.drag-active {
+            border-color: #60a5fa;
+            background-color: rgba(96, 165, 250, 0.1);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: '#3b82f6' }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col text-gray-800 dark:text-gray-200">
+
+    <nav class="glass-panel sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-gamepad text-2xl text-blue-600 dark:text-blue-400 mr-3"></i>
+                    <span class="font-bold text-xl tracking-tight">Paradox Mod<span class="text-blue-600 dark:text-blue-400">Exporter</span></span>
+                </div>
+                <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-moon dark:hidden text-gray-600"></i>
+                    <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold mb-2">Export Mod List</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto">
+                Due to browser security, we cannot auto-detect folders. Please select your <code>dlc_load.json</code> and then your <code>mod</code> folder manually.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Controls Section -->
+            <div class="flex flex-col space-y-6">
+                
+                <!-- Step 1: JSON -->
+                <div class="glass-panel rounded-2xl p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <span class="step-number">1</span> Load dlc_load.json
+                    </h2>
+                    <p class="text-xs text-gray-500 mb-3">Usually found in <code>Documents/Paradox Interactive/[Game]/</code></p>
+                    
+                    <label class="file-upload-zone rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer h-32 relative">
+                        <input type="file" id="jsonInput" accept=".json" class="hidden" />
+                        <i class="fas fa-file-code text-3xl text-gray-400 mb-2"></i>
+                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Click to select file</span>
+                        <span id="jsonStatus" class="absolute bottom-2 text-xs text-green-500 font-bold hidden">
+                            <i class="fas fa-check"></i> Loaded
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Step 2: Mod Files -->
+                <div class="glass-panel rounded-2xl p-6 opacity-50 pointer-events-none transition-opacity duration-300" id="step2Panel">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <span class="step-number">2</span> Select .mod Files
+                    </h2>
+                    <p class="text-xs text-gray-500 mb-3">
+                        Navigate to your <code>mod</code> folder.<br>
+                        <strong>Select ALL files (Ctrl+A)</strong> and click Open.
+                    </p>
+                    
+                    <label class="file-upload-zone rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer h-32 relative">
+                        <!-- Changed: Removed webkitdirectory, added accept=".mod" -->
+                        <input type="file" id="folderInput" accept=".mod" multiple class="hidden" />
+                        <i class="fas fa-copy text-3xl text-gray-400 mb-2"></i>
+                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">Click to select .mod files</span>
+                        <span id="folderStatus" class="absolute bottom-2 text-xs text-blue-500 font-bold hidden">
+                            Processing...
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Step 3: Action -->
+                <button id="exportBtn" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center" disabled>
+                    <i class="fas fa-download mr-2"></i> Download Mod List
+                </button>
+
+            </div>
+
+            <!-- Results Section -->
+            <div class="glass-panel rounded-2xl p-6 flex flex-col h-[500px]">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold flex items-center">
+                        <i class="fas fa-list text-gray-400 mr-2"></i> Mod List Preview
+                    </h2>
+                    <span id="countBadge" class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2.5 py-0.5 rounded-full hidden">0 Mods</span>
+                </div>
+                
+                <div class="flex-grow bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 overflow-auto font-mono text-sm relative">
+                    <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                        <i class="fas fa-arrow-left text-2xl mb-2 lg:hidden"></i>
+                        <p>Complete the steps on the left to see your mods here.</p>
+                    </div>
+                    <ul id="modList" class="space-y-1"></ul>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // State
+        let enabledModsPaths = []; // Array of strings from JSON
+        let extractedNames = []; // Final list of names
+
+        // Elements
+        const el = {
+            jsonInput: document.getElementById('jsonInput'),
+            folderInput: document.getElementById('folderInput'),
+            step2: document.getElementById('step2Panel'),
+            modList: document.getElementById('modList'),
+            emptyState: document.getElementById('emptyState'),
+            exportBtn: document.getElementById('exportBtn'),
+            countBadge: document.getElementById('countBadge'),
+            jsonStatus: document.getElementById('jsonStatus'),
+            folderStatus: document.getElementById('folderStatus')
+        };
+
+        // --- Step 1: Handle JSON Load ---
+        el.jsonInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                
+                // Paradox JSON structure typically has "enabled_mods": ["mod/file.mod", ...]
+                enabledModsPaths = data.enabled_mods || [];
+                
+                if (enabledModsPaths.length === 0) {
+                    alert("No enabled mods found in this JSON file.");
+                    return;
+                }
+
+                // Update UI
+                el.jsonStatus.classList.remove('hidden');
+                el.jsonStatus.innerHTML = `<i class="fas fa-check"></i> Found ${enabledModsPaths.length} enabled mods`;
+                
+                // Unlock Step 2
+                el.step2.classList.remove('opacity-50', 'pointer-events-none');
+                
+                logToPreview(`JSON Loaded. Waiting for mod folder...`, true);
+
+            } catch (err) {
+                alert("Error reading JSON file. Make sure it is a valid dlc_load.json");
+                console.error(err);
+            }
+        });
+
+        // --- Step 2: Handle Folder Select & Processing ---
+        el.folderInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            el.folderStatus.classList.remove('hidden');
+            el.folderStatus.textContent = "Processing files...";
+            
+            // 1. Create a map of filename -> FileObject for quick lookup
+            // paradox paths are like "mod/abc.mod", so we just need "abc.mod" key
+            const fileMap = new Map();
+            for (const file of files) {
+                fileMap.set(file.name, file);
+            }
+
+            extractedNames = [];
+            el.modList.innerHTML = ''; // Clear current list
+            el.emptyState.classList.add('hidden');
+
+            // 2. Iterate through enabled mods from Step 1
+            for (const path of enabledModsPaths) {
+                // Remove "mod/" prefix if present to match actual filenames
+                // e.g., "mod/ugc_12345.mod" -> "ugc_12345.mod"
+                const filename = path.split('/').pop(); 
+                
+                const modFile = fileMap.get(filename);
+                
+                if (modFile) {
+                    try {
+                        const content = await modFile.text();
+                        // Regex to find name="Mod Name"
+                        const match = content.match(/name\s*=\s*"(.*?)"/);
+                        
+                        if (match && match[1]) {
+                            addModToList(match[1], true);
+                            extractedNames.push(match[1]);
+                        } else {
+                            addModToList(`${filename} (Name not found)`, false);
+                            extractedNames.push(filename);
+                        }
+                    } catch (err) {
+                        addModToList(`${filename} (Read Error)`, false);
+                    }
+                } else {
+                    addModToList(`${filename} (Missing from folder)`, false);
+                }
+            }
+
+            // Update UI Final
+            el.folderStatus.innerHTML = `<i class="fas fa-check"></i> Processed`;
+            el.countBadge.textContent = `${extractedNames.length} Mods`;
+            el.countBadge.classList.remove('hidden');
+            el.exportBtn.disabled = false;
+        });
+
+        // --- Step 3: Export ---
+        el.exportBtn.addEventListener('click', () => {
+            const content = "Enabled Mods List:\n==================\n" + extractedNames.join('\n');
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mod_list.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Helpers
+        function logToPreview(msg, isSystem = false) {
+            el.emptyState.classList.add('hidden');
+            const li = document.createElement('li');
+            li.className = isSystem ? "text-blue-500 italic" : "text-gray-700 dark:text-gray-300";
+            li.textContent = msg;
+            el.modList.appendChild(li);
+        }
+
+        function addModToList(name, success) {
+            const li = document.createElement('li');
+            li.className = "flex items-center py-1 border-b border-gray-100 dark:border-gray-800 last:border-0";
+            
+            const icon = document.createElement('i');
+            icon.className = success 
+                ? "fas fa-check text-green-500 mr-2 text-xs" 
+                : "fas fa-exclamation-circle text-red-400 mr-2 text-xs";
+            
+            const span = document.createElement('span');
+            span.textContent = name;
+            span.className = success ? "text-gray-700 dark:text-gray-200" : "text-gray-400 italic";
+
+            li.appendChild(icon);
+            li.appendChild(span);
+            el.modList.appendChild(li);
+        }
+
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('themeToggle');
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.body.classList.add('dark');
+            }
+        }
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        });
+        initTheme();
+
+    </script>
+</body>
+</html>
